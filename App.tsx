@@ -1,0 +1,387 @@
+
+
+
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { Dock } from './components/Dock';
+import { MenuBar } from './components/MenuBar';
+import { Window } from './components/Window';
+import { PptMaker } from './components/apps/PptMaker';
+import { WordProcessor } from './components/apps/WordProcessor';
+import { Spreadsheet } from './components/apps/Spreadsheet';
+import { Settings } from './components/apps/Settings';
+import { VeoVideo } from './components/apps/VeoVideo';
+import { CherryAI } from './components/apps/CherryAI';
+import { ImageStudio } from './components/apps/ImageStudio';
+import { FileManager } from './components/apps/FileManager';
+import { Shortcuts } from './components/apps/Shortcuts';
+import { Nani } from './components/apps/Nani';
+import { ExposeView } from './components/ExposeView';
+import { type WindowState, type AppName, type Shortcut, type DesktopItem } from './types';
+import { APPS } from './constants';
+import * as shortcutsService from './services/shortcutsService';
+import { playSound } from './services/audioService';
+import { Browser } from './components/apps/Browser';
+import { Google } from './components/apps/Google';
+import { PortfolioMaker } from './components/apps/PortfolioMaker';
+
+
+const getIconForFile = (fileName: string) => {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    let emoji = '📁';
+    switch (extension) {
+        case 'html': emoji = '📄'; break;
+        case 'css': emoji = '🎨'; break;
+        case 'js': emoji = '📜'; break;
+        case 'md': emoji = '📝'; break;
+        case 'pptx': emoji = '📊'; break;
+        case 'json': emoji = '📦'; break;
+        case 'txt': emoji = '🗒️'; break;
+    }
+    return <span className="text-5xl drop-shadow-lg">{emoji}</span>;
+};
+
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    return isMobile;
+};
+
+const App: React.FC = () => {
+  const [windows, setWindows] = useState<WindowState[]>([]);
+  const [nextZIndex, setNextZIndex] = useState(10);
+  const [wallpaper, setWallpaper] = useState('https://picsum.photos/seed/macos/2560/1440');
+  const [isExposeActive, setIsExposeActive] = useState(false);
+  const [desktopItems, setDesktopItems] = useState<DesktopItem[]>([]);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  const isMobile = useIsMobile();
+  const [activeMobileApp, setActiveMobileApp] = useState<AppName | null>(null);
+
+  const openApp = useCallback((appName: AppName) => {
+    playSound('minimizeOpen');
+     if (isMobile) {
+        setActiveMobileApp(appName);
+        return;
+    }
+
+    setWindows(currentWindows => {
+      const existingWindow = currentWindows.find(w => w.app.name === appName);
+      if (existingWindow) {
+        // If app is open, bring it to front and un-minimize it
+        const focusedWindows = currentWindows.map(w => w.id === existingWindow.id ? { ...w, zIndex: nextZIndex + 1, minimized: false, minimizing: false } : w);
+        setNextZIndex(prev => prev + 1);
+        return focusedWindows;
+      }
+      
+      const app = APPS.find(a => a.name === appName);
+      if (!app) return currentWindows;
+
+      let size = { width: 800, height: 600 };
+      if (appName === 'Presentation' || appName === 'Word Processor' || appName === 'Spreadsheet' || appName === 'Image Studio' || appName === 'Browser' || appName === 'Google') {
+        size = { width: 900, height: 700 };
+      } else if (appName === 'Settings' || appName === 'Shortcuts') {
+        size = { width: 600, height: 450 };
+      } else if (appName === 'Veo Video') {
+        size = { width: 700, height: 750 };
+      } else if (appName === 'Cherry AI' || appName === 'PortfolioMaker') {
+        size = { width: 1024, height: 768 };
+      } else if (appName === 'File Manager') {
+        size = { width: 700, height: 800 };
+      } else if (appName === 'Nani') {
+        size = { width: 500, height: 700 };
+      }
+
+      const newWindow: WindowState = {
+        id: Date.now(),
+        app,
+        title: app.name,
+        position: { x: Math.random() * 200 + 150, y: Math.random() * 100 + 50 },
+        size,
+        zIndex: nextZIndex,
+        minimized: false,
+        minimizing: false,
+        isFullScreen: false,
+      };
+      setNextZIndex(prev => prev + 1);
+      return [...currentWindows, newWindow];
+    });
+  }, [nextZIndex, isMobile]);
+  
+  // Global shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        // Don't trigger shortcuts if the user is typing in an input/textarea
+        const target = e.target as HTMLElement;
+        
+        // Exposé shortcut (should work even in inputs)
+        if (!isMobile && (e.metaKey || e.ctrlKey) && e.key === 'ArrowDown') {
+            e.preventDefault();
+            setIsExposeActive(prev => !prev);
+            return;
+        }
+
+        if (e.key === 'Escape' && isExposeActive) {
+            e.preventDefault();
+            setIsExposeActive(false);
+            return;
+        }
+
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+            // Allow shortcuts from the shortcut definition input though
+            if(target.id !== 'shortcut-input-definer') return;
+        }
+
+        const shortcuts = shortcutsService.getShortcuts();
+        const matchedShortcut = shortcuts.find(s =>
+            s.keys.ctrlKey === e.ctrlKey &&
+            s.keys.altKey === e.altKey &&
+            s.keys.shiftKey === e.shiftKey &&
+            s.keys.metaKey === e.metaKey &&
+            s.keys.key.toLowerCase() === e.key.toLowerCase()
+        );
+
+        if (matchedShortcut) {
+            e.preventDefault();
+            if (matchedShortcut.action.type === 'OPEN_APP') {
+                openApp(matchedShortcut.action.appName);
+            }
+        }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [openApp, isExposeActive, isMobile]);
+
+  const closeActiveMobileApp = useCallback(() => {
+    playSound('close');
+    setActiveMobileApp(null);
+  }, []);
+
+  const closeWindow = useCallback((id: number) => {
+    if (isMobile) {
+        closeActiveMobileApp();
+        return;
+    }
+    playSound('close');
+    setWindows(currentWindows =>
+      currentWindows.map(w => (w.id === id ? { ...w, closing: true } : w))
+    );
+
+    setTimeout(() => {
+      setWindows(currentWindows => currentWindows.filter(w => w.id !== id));
+    }, 200); // Match animation duration from CSS
+  }, [isMobile, closeActiveMobileApp]);
+  
+  const minimizeWindow = useCallback((id: number) => {
+    if (isMobile) {
+        closeActiveMobileApp();
+        return;
+    }
+    playSound('minimizeOpen');
+    setWindows(currentWindows => currentWindows.map(w => w.id === id ? { ...w, minimizing: true } : w));
+    
+    setTimeout(() => {
+        setWindows(currentWindows => currentWindows.map(w => w.id === id ? { ...w, minimized: true, minimizing: false } : w))
+    }, 400); // Duration of the animation
+  }, [isMobile, closeActiveMobileApp]);
+
+  const focusWindow = useCallback((id: number) => {
+    if (isMobile) return;
+    setWindows(currentWindows => {
+        return currentWindows.map(w => w.id === id ? { ...w, zIndex: nextZIndex, minimized: false, minimizing: false } : w);
+    });
+    setNextZIndex(prev => prev + 1);
+  }, [nextZIndex, isMobile]);
+
+  const toggleFullScreen = useCallback((id: number) => {
+    if (isMobile) return;
+    focusWindow(id);
+    setWindows(currentWindows =>
+      currentWindows.map(w =>
+        w.id === id ? { ...w, isFullScreen: !w.isFullScreen } : w
+      )
+    );
+  }, [focusWindow, isMobile]);
+
+  const updateWindowState = useCallback((id: number, updates: Partial<WindowState>) => {
+    if(isMobile) return;
+    setWindows(currentWindows => currentWindows.map(w => w.id === id ? { ...w, ...updates } : w));
+  }, [isMobile]);
+  
+  const activeWindow = useMemo(() => {
+    if (windows.length === 0) return null;
+    const unminimizedWindows = windows.filter(w => !w.minimized && !w.minimizing);
+    if (unminimizedWindows.length === 0) return null;
+    return unminimizedWindows.reduce((top, w) => w.zIndex > top.zIndex ? w : top);
+  }, [windows]);
+
+  const activeAppName = isMobile ? activeMobileApp ?? 'Finder' : activeWindow?.app.name ?? 'Finder';
+  const activeWindowId = activeWindow?.id;
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const isFile = e.dataTransfer.types.includes('application/x-macos-file');
+      if (isFile) {
+          e.dataTransfer.dropEffect = 'copy';
+          setIsDraggingOver(true);
+      }
+  };
+
+  const handleDragLeave = () => {
+      setIsDraggingOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDraggingOver(false);
+      
+      const fileDataString = e.dataTransfer.getData('application/x-macos-file');
+      if (fileDataString) {
+          try {
+              const { name } = JSON.parse(fileDataString);
+              // Adjust position to center the icon on the cursor, accounting for menu bar height
+              const menuBarHeight = 28;
+              const newItem: DesktopItem = {
+                  id: Date.now(),
+                  name,
+                  position: { x: e.clientX - 40, y: e.clientY - menuBarHeight - 40 }
+              };
+              // Prevent duplicates
+              if (!desktopItems.some(item => item.name === newItem.name)) {
+                  setDesktopItems(prev => [...prev, newItem]);
+              }
+          } catch (error) {
+              console.error("Failed to parse dropped file data:", error);
+          }
+      }
+  };
+
+  const renderAppContent = (appName: AppName) => {
+    switch(appName) {
+      case 'Presentation':
+        return <PptMaker />;
+      case 'Word Processor':
+        return <WordProcessor />;
+      case 'Spreadsheet':
+        return <Spreadsheet />;
+      case 'Nani':
+        return <Nani />;
+      case 'Settings':
+        return <Settings currentWallpaper={wallpaper} onWallpaperChange={setWallpaper} />;
+      case 'Veo Video':
+        return <VeoVideo />;
+      case 'Cherry AI':
+        return <CherryAI />;
+      case 'Image Studio':
+        return <ImageStudio />;
+      case 'File Manager':
+        return <FileManager />;
+      case 'Shortcuts':
+        return <Shortcuts />;
+      case 'Browser':
+        return <Browser />;
+      case 'Google':
+        return <Google />;
+      case 'PortfolioMaker':
+        return <PortfolioMaker />;
+      default:
+        return <div className="p-4">App not found</div>;
+    }
+  };
+
+  if (isMobile) {
+    return (
+        <div 
+            className={`w-screen h-screen bg-cover bg-center font-sans`}
+            style={{ backgroundImage: `url(${wallpaper})`}}
+        >
+            <MenuBar activeAppName={activeMobileApp || 'Finder'} />
+            <main className="w-full h-full">
+                {activeMobileApp && (
+                    <div className="absolute inset-0 top-7 z-20 flex flex-col bg-gray-200 dark:bg-gray-800 animate-fade-in">
+                        <header className="h-10 bg-gray-100 dark:bg-gray-700 flex items-center px-3 flex-shrink-0 border-b border-gray-300 dark:border-gray-600">
+                            <button onClick={closeActiveMobileApp} className="flex items-center space-x-1 text-blue-500 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md p-1 -ml-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <span>Home</span>
+                            </button>
+                            <div className="flex-1 text-center text-sm font-semibold truncate pr-20">{activeMobileApp}</div>
+                        </header>
+                        <div className="flex-1 overflow-auto">
+                            {renderAppContent(activeMobileApp)}
+                        </div>
+                    </div>
+                )}
+            </main>
+            <Dock openApp={openApp} runningApps={activeMobileApp ? [activeMobileApp] : []} />
+        </div>
+    );
+  }
+
+  return (
+    <div 
+      className={`w-screen h-screen bg-cover bg-center font-sans transition-all duration-500 ${isDraggingOver ? 'outline outline-4 outline-offset-[-4px] outline-blue-500/50' : ''}`}
+      style={{ backgroundImage: `url(${wallpaper})`}}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onDragLeave={handleDragLeave}
+    >
+      <MenuBar activeAppName={activeAppName} />
+      <main className={`w-full h-full transition-opacity duration-300 ${isExposeActive ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        {desktopItems.map(item => (
+            <div
+                key={item.id}
+                onDoubleClick={() => openApp('File Manager')}
+                className="desktop-item absolute flex flex-col items-center justify-center w-24 text-center cursor-pointer group"
+                style={{ top: `${item.position.y}px`, left: `${item.position.x}px`, zIndex: 1 }}
+            >
+                {getIconForFile(item.name)}
+                <span className="text-white text-xs font-semibold mt-1 p-1 rounded bg-black/20 group-hover:bg-blue-500/80 truncate w-full">
+                    {item.name}
+                </span>
+            </div>
+        ))}
+        {windows.map(windowState => 
+            <Window
+              key={windowState.id}
+              state={windowState}
+              isActive={windowState.id === activeWindowId}
+              onClose={() => closeWindow(windowState.id)}
+              onMinimize={() => minimizeWindow(windowState.id)}
+              onToggleFullScreen={() => toggleFullScreen(windowState.id)}
+              onFocus={() => focusWindow(windowState.id)}
+              onUpdate={updates => updateWindowState(windowState.id, updates)}
+              style={{ display: windowState.minimized ? 'none' : 'flex' }}
+            >
+              {renderAppContent(windowState.app.name)}
+            </Window>
+        )}
+      </main>
+      {isExposeActive && (
+        <ExposeView
+            windows={windows.filter(w => !w.minimized)}
+            onSelectWindow={(id) => {
+                focusWindow(id);
+                setIsExposeActive(false);
+            }}
+            onExit={() => setIsExposeActive(false)}
+        />
+      )}
+      <Dock openApp={openApp} runningApps={windows.map(w => w.app.name)} />
+    </div>
+  );
+};
+
+export default App;
