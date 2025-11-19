@@ -1,9 +1,6 @@
-
-
-
 import React from 'react';
 
-export type AppName = 'Presentation' | 'Word Processor' | 'Spreadsheet' | 'Finder' | 'Settings' | 'Veo Video' | 'Cherry AI' | 'Image Studio' | 'File Manager' | 'Shortcuts' | 'Nani' | 'Browser' | 'Google' | 'PortfolioMaker';
+export type AppName = 'PowerPoint' | 'Word' | 'Excel' | 'Finder' | 'Settings' | 'Veo Video' | 'Cherry AI' | 'Image Studio' | 'File Manager' | 'Shortcuts' | 'Nani' | 'Browser' | 'Google' | 'PortfolioMaker';
 
 export interface AppDefinition {
   name: AppName;
@@ -43,4 +40,12 @@ export interface DesktopItem {
   id: number;
   name: string;
   position: { x: number; y: number };
+}
+
+export interface SnapTarget {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isFullScreen?: boolean;
 }

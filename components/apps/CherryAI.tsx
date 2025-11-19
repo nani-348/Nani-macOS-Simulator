@@ -1,3 +1,4 @@
+
 // Fix: Add type declarations for browser-specific APIs (SpeechRecognition, webkitSpeechRecognition, webkitAudioContext)
 // to resolve TypeScript errors.
 interface SpeechRecognition {
@@ -109,6 +110,7 @@ export const CherryAI: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
+  const [mobileTab, setMobileTab] = useState<'chat' | 'code'>('chat');
 
   // --- Voice State ---
   const [voiceState, setVoiceState] = useState<'idle' | 'listening' | 'processing' | 'speaking'>('idle');
@@ -222,6 +224,7 @@ export const CherryAI: React.FC = () => {
 
   const executeCodeGeneration = async (promptToGenerate: string) => {
     setIsLoading(true);
+    if (window.innerWidth < 1024) setMobileTab('code'); // Auto-switch to code view on mobile
     const updatedFiles = await generateOrModifyCode(promptToGenerate, files);
 
     if (updatedFiles.length > 0 && updatedFiles[0].fileName !== 'error.txt') {
@@ -432,6 +435,7 @@ export const CherryAI: React.FC = () => {
               setActiveTab(generatedFiles.find(f => f.fileName.toLowerCase() === 'index.html')?.fileName || newTabs[0]);
               
               setConversation(prev => [...prev, { key: Date.now() + 1, role: 'ai', text: 'Success! Here is your new portfolio website. You can ask for changes in the chat.' }]);
+              if(window.innerWidth < 1024) setMobileTab('code');
           } else {
               throw new Error(generatedFiles[0]?.code || 'Failed to generate files from resume.');
           }
@@ -448,179 +452,211 @@ export const CherryAI: React.FC = () => {
 
 
   return (
-    <div className="flex flex-col lg:flex-row h-full bg-[#1e1e1e] text-gray-300 font-mono">
+    <div className="flex flex-col h-full bg-[#1e1e1e] text-gray-300 font-mono">
       <input type="file" ref={resumeInputRef} onChange={handleResumeFileChange} className="hidden" accept="image/*" />
-      {/* Left Panel */}
-      <div className="w-full lg:w-[350px] bg-[#252526] flex flex-col border-r border-gray-700 flex-shrink-0 h-1/2 lg:h-full">
-        <div className="h-[45%] lg:h-[45%] flex flex-col p-2 border-b border-gray-700">
-          <h3 className="text-xs uppercase font-bold text-gray-500 px-2 mb-2 flex-shrink-0">Conversation</h3>
-            <div className="flex-grow overflow-y-auto space-y-4 p-2">
-              {conversation.map((msg) => (
-                <div key={msg.key} className={`flex items-start gap-2.5 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                  {msg.role === 'ai' && <div className="w-6 h-6 text-xs rounded-full bg-red-500/80 flex items-center justify-center flex-shrink-0 font-sans font-bold">AI</div>}
-                  <div 
-                    onClick={() => msg.role === 'user' && setPrompt(msg.text)}
-                    className={`p-2 rounded-lg max-w-[85%] text-sm ${msg.role === 'user' ? 'bg-gray-600 cursor-pointer' : 'bg-gray-700/60'}`}
-                  >
-                    {msg.text}
-                     {isEnhancing && conversation[conversation.length - 1].key === msg.key &&
-                        <div className="flex items-center text-xs mt-1 text-gray-400">
-                            <svg className="animate-spin h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            Enhancing prompt...
-                        </div>
-                     }
-                  </div>
-                  {msg.role === 'user' && <div className="w-6 h-6 text-xs rounded-full bg-gray-500 flex items-center justify-center flex-shrink-0 font-sans font-bold">U</div>}
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex items-start gap-2.5">
-                  <div className="w-6 h-6 text-xs rounded-full bg-red-500/80 flex items-center justify-center flex-shrink-0 font-sans font-bold">AI</div>
-                  <div className="p-2 rounded-lg bg-gray-700/60 flex items-center">
-                    <div className="flex items-center justify-center space-x-1">
-                        <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
-                        <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-pulse [animation-delay:-0.15s]"></div>
-                        <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-pulse"></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-        </div>
-        
-        <div className="flex-grow p-2 overflow-y-auto flex flex-col">
-            <div className="flex items-center justify-between mb-2 px-2 flex-shrink-0">
-                <h3 className="text-xs uppercase font-bold text-gray-500">Explorer</h3>
-                <div className="flex items-center space-x-2">
-                    <button onClick={handleNewProject} title="New Project" className="text-gray-400 hover:text-white">
-                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                    </button>
-                    <button onClick={handleGenerateFromResumeClick} title="Generate Portfolio from Resume" className="text-gray-400 hover:text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z" /></svg>
-                    </button>
-                    <button onClick={handleDownload} title="Download Project as ZIP" disabled={files.length === 0 || files[0].fileName === 'welcome.md'} className="text-gray-400 hover:text-white disabled:text-gray-600 disabled:cursor-not-allowed">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    </button>
-                </div>
-            </div>
-            <ul className="flex-grow overflow-y-auto">
-                {files.map(file => (
-                <li 
-                    key={file.fileName}
-                    onClick={() => handleFileSelect(file.fileName)}
-                    className={`flex items-center space-x-2 p-1 rounded-md cursor-pointer text-sm ${activeTab === file.fileName ? 'bg-gray-700/50' : 'hover:bg-gray-700/30'}`}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                    <span className="truncate">{file.fileName}</span>
-                </li>
-                ))}
-                {isLoading && files.length === 0 && (
-                    <div className="text-gray-400 text-sm p-2">Generating files...</div>
-                )}
-            </ul>
-        </div>
-        
-        <div className="p-3 border-t border-gray-700 flex-shrink-0">
-          <div className="relative">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), !isLoading && handleSubmitPrompt())}
-              placeholder="Describe the project you want to create or modify..."
-              className="w-full p-2 pr-10 h-24 bg-[#1e1e1e] border border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:outline-none text-sm resize-none"
-              disabled={isLoading || isEnhancing}
-            />
-            <button
-                onClick={handleMicClick}
-                disabled={isLoading || isEnhancing || voiceState !== 'idle'}
-                className="absolute right-2 top-2 p-1 text-gray-400 hover:text-white disabled:text-gray-600"
-                title="Use Voice"
-            >
-               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                 <path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4z" />
-                 <path fillRule="evenodd" d="M3 8a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                 <path d="M10 18a5 5 0 005-5h-2a3 3 0 11-6 0H5a5 5 0 005 5z" />
-                </svg>
-            </button>
-          </div>
-          <button
-            onClick={handleSubmitPrompt}
-            disabled={isLoading || !prompt || isEnhancing}
-            className="w-full mt-2 px-4 py-2 bg-red-600/80 text-white rounded-md hover:bg-red-700/80 disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center text-sm"
-          >
-            {isLoading ? (
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : 'Submit'}
-          </button>
-        </div>
+      
+      {/* Mobile Tab Bar */}
+      <div className="lg:hidden flex border-b border-gray-700 bg-[#252526] sticky top-0 z-20">
+         <button onClick={() => setMobileTab('chat')} className={`flex-1 p-3 text-sm font-semibold ${mobileTab === 'chat' ? 'text-white border-b-2 border-red-500 bg-[#333]' : 'text-gray-400'}`}>Chat</button>
+         <button onClick={() => setMobileTab('code')} className={`flex-1 p-3 text-sm font-semibold ${mobileTab === 'code' ? 'text-white border-b-2 border-red-500 bg-[#333]' : 'text-gray-400'}`}>Code & Preview</button>
       </div>
 
-      {/* Right Panel */}
-      <div className="flex-grow flex flex-col relative">
-         {(isLoading || isEnhancing) && (
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center">
-                <div className="w-48 h-48 relative mb-6">
-                    <div className="absolute inset-0 border-4 border-red-500/50 rounded-full animate-pulse"></div>
-                    <div className="absolute inset-4 border-4 border-red-500/50 rounded-full animate-pulse [animation-delay:-0.4s]"></div>
-                    <div className="absolute inset-8 border-4 border-red-500/50 rounded-full animate-pulse [animation-delay:-0.8s]"></div>
-                    <div className="absolute inset-0 flex items-center justify-center text-red-400 font-mono text-5xl">
-                        <span className="animate-pulse [animation-delay:-1s]">{'</>'}</span>
+      <div className="flex-grow flex flex-col lg:flex-row overflow-hidden">
+          {/* Left Panel (Chat) - Controlled by visibility on mobile */}
+          <div className={`w-full lg:w-[350px] bg-[#252526] flex-col border-r border-gray-700 flex-shrink-0 h-full lg:flex ${mobileTab === 'chat' ? 'flex' : 'hidden'}`}>
+            <div className="h-[45%] lg:h-[45%] flex flex-col p-2 border-b border-gray-700">
+              <h3 className="text-xs uppercase font-bold text-gray-500 px-2 mb-2 flex-shrink-0">Conversation</h3>
+                <div className="flex-grow overflow-y-auto space-y-4 p-2">
+                  {conversation.map((msg) => (
+                    <div key={msg.key} className={`flex items-start gap-2.5 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                      {msg.role === 'ai' && <div className="w-6 h-6 text-xs rounded-full bg-red-500/80 flex items-center justify-center flex-shrink-0 font-sans font-bold">AI</div>}
+                      <div 
+                        onClick={() => msg.role === 'user' && setPrompt(msg.text)}
+                        className={`p-2 rounded-lg max-w-[85%] text-sm ${msg.role === 'user' ? 'bg-gray-600 cursor-pointer' : 'bg-gray-700/60'}`}
+                      >
+                        {msg.text}
+                         {isEnhancing && conversation[conversation.length - 1].key === msg.key &&
+                            <div className="flex items-center text-xs mt-1 text-gray-400">
+                                <svg className="animate-spin h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                Enhancing prompt...
+                            </div>
+                         }
+                      </div>
+                      {msg.role === 'user' && <div className="w-6 h-6 text-xs rounded-full bg-gray-500 flex items-center justify-center flex-shrink-0 font-sans font-bold">U</div>}
+                    </div>
+                  ))}
+                  {isLoading && (
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-6 h-6 text-xs rounded-full bg-red-500/80 flex items-center justify-center flex-shrink-0 font-sans font-bold">AI</div>
+                      <div className="p-2 rounded-lg bg-gray-700/60 flex items-center">
+                        <div className="flex items-center justify-center space-x-1">
+                            <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
+                            <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-pulse [animation-delay:-0.15s]"></div>
+                            <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+            </div>
+            
+            <div className="flex-grow p-2 overflow-y-auto flex flex-col">
+                <div className="flex items-center justify-between mb-2 px-2 flex-shrink-0">
+                    <h3 className="text-xs uppercase font-bold text-gray-500">Explorer</h3>
+                    <div className="flex items-center space-x-2">
+                        <button onClick={handleNewProject} title="New Project" className="text-gray-400 hover:text-white">
+                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        </button>
+                        <button onClick={handleGenerateFromResumeClick} title="Generate Portfolio from Resume" className="text-gray-400 hover:text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z" /></svg>
+                        </button>
+                        <button onClick={handleDownload} title="Download Project as ZIP" disabled={files.length === 0 || files[0].fileName === 'welcome.md'} className="text-gray-400 hover:text-white disabled:text-gray-600 disabled:cursor-not-allowed">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        </button>
                     </div>
                 </div>
-                <h3 className="text-xl font-bold text-white">AI is building...</h3>
-                <p className="text-gray-300 mt-2 transition-all duration-500 w-64 text-center">{isLoading ? loadingMessage : 'Enhancing prompt...'}</p>
+                <ul className="flex-grow overflow-y-auto">
+                    {files.map(file => (
+                    <li 
+                        key={file.fileName}
+                        onClick={() => handleFileSelect(file.fileName)}
+                        className={`flex items-center space-x-2 p-1 rounded-md cursor-pointer text-sm ${activeTab === file.fileName ? 'bg-gray-700/50' : 'hover:bg-gray-700/30'}`}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                        <span className="truncate">{file.fileName}</span>
+                    </li>
+                    ))}
+                    {isLoading && files.length === 0 && (
+                        <div className="text-gray-400 text-sm p-2">Generating files...</div>
+                    )}
+                </ul>
             </div>
-         )}
-         <div className="bg-[#252526] flex-shrink-0 flex border-b border-gray-700 overflow-x-auto">
-            {openTabs.map(tabName => (
-                <div
-                    key={tabName}
-                    onClick={() => setActiveTab(tabName)}
-                    className={`flex items-center justify-between px-4 py-1.5 text-sm cursor-pointer border-r border-gray-700 flex-shrink-0 ${activeTab === tabName ? 'bg-[#1e1e1e]' : 'bg-[#2d2d2d] text-gray-400'}`}
-                >
-                    <span className="truncate max-w-xs">{tabName}</span>
-                     <button onClick={(e) => handleTabClose(tabName, e)} className="ml-3 text-gray-500 hover:text-white rounded-full p-0.5 hover:bg-gray-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                </div>
-            ))}
-        </div>
-        <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 overflow-hidden">
-            <div className="relative overflow-hidden bg-[#1e1e1e]">
-              {activeTab ? (
-                  <pre className="w-full h-full p-4 overflow-auto text-sm absolute inset-0">
-                    <code className="whitespace-pre-wrap">{activeFileContent}</code>
-                  </pre>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-500">
-                    {isLoading ? "Processing..." : "No file selected."}
-                </div>
-              )}
-            </div>
-            <div className="relative bg-white border-l border-gray-700 overflow-hidden">
-                {hasPreview && (
-                  <button
-                    onClick={handleOpenPreviewInNewTab}
-                    className="absolute top-2 right-2 p-1.5 bg-gray-100 text-gray-800 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors z-20"
-                    title="Open preview in new tab"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </button>
-                )}
-                <iframe
-                    srcDoc={previewContent}
-                    title="Preview"
-                    sandbox="allow-scripts allow-same-origin"
-                    className="w-full h-full border-0"
+            
+            <div className="p-3 border-t border-gray-700 flex-shrink-0">
+              <div className="relative">
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), !isLoading && handleSubmitPrompt())}
+                  placeholder="Describe the project you want to create or modify..."
+                  className="w-full p-2 pr-10 h-24 bg-[#1e1e1e] border border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:outline-none text-sm resize-none"
+                  disabled={isLoading || isEnhancing}
                 />
+                <button
+                    onClick={handleMicClick}
+                    disabled={isLoading || isEnhancing || voiceState !== 'idle'}
+                    className="absolute right-2 top-2 p-1 text-gray-400 hover:text-white disabled:text-gray-600"
+                    title="Use Voice"
+                >
+                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                     <path d="M7 4a3 3 0 016 0v6a3 3 0 11-6 0V4z" />
+                     <path fillRule="evenodd" d="M3 8a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                     <path d="M10 18a5 5 0 005-5h-2a3 3 0 11-6 0H5a5 5 0 005 5z" />
+                    </svg>
+                </button>
+              </div>
+              <button
+                onClick={handleSubmitPrompt}
+                disabled={isLoading || !prompt || isEnhancing}
+                className="w-full mt-2 px-4 py-2 bg-red-600/80 text-white rounded-md hover:bg-red-700/80 disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center text-sm"
+              >
+                {isLoading ? (
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : 'Submit'}
+              </button>
             </div>
-        </div>
+          </div>
+
+          {/* Right Panel (Code & Preview) - Controlled by visibility on mobile */}
+          <div className={`flex-grow flex-col relative h-full lg:flex ${mobileTab === 'code' ? 'flex' : 'hidden'}`}>
+             {(isLoading || isEnhancing) && (
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center">
+                    <div className="w-48 h-48 relative mb-6">
+                        <div className="absolute inset-0 border-4 border-red-500/50 rounded-full animate-pulse"></div>
+                        <div className="absolute inset-4 border-4 border-red-500/50 rounded-full animate-pulse [animation-delay:-0.4s]"></div>
+                        <div className="absolute inset-8 border-4 border-red-500/50 rounded-full animate-pulse [animation-delay:-0.8s]"></div>
+                        <div className="absolute inset-0 flex items-center justify-center text-red-400 font-mono text-5xl">
+                            <span className="animate-pulse [animation-delay:-1s]">{'</>'}</span>
+                        </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-white">AI is building...</h3>
+                    <p className="text-gray-300 mt-2 transition-all duration-500 w-64 text-center">{isLoading ? loadingMessage : 'Enhancing prompt...'}</p>
+                </div>
+             )}
+             <div className="bg-[#252526] flex-shrink-0 flex border-b border-gray-700 overflow-x-auto">
+                {openTabs.map(tabName => (
+                    <div
+                        key={tabName}
+                        onClick={() => setActiveTab(tabName)}
+                        className={`flex items-center justify-between px-4 py-1.5 text-sm cursor-pointer border-r border-gray-700 flex-shrink-0 ${activeTab === tabName ? 'bg-[#1e1e1e]' : 'bg-[#2d2d2d] text-gray-400'}`}
+                    >
+                        <span className="truncate max-w-xs">{tabName}</span>
+                         <button onClick={(e) => handleTabClose(tabName, e)} className="ml-3 text-gray-500 hover:text-white rounded-full p-0.5 hover:bg-gray-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                ))}
+            </div>
+            <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 overflow-hidden">
+                <div className="relative overflow-hidden bg-[#1e1e1e]">
+                  {activeTab ? (
+                      <pre className="w-full h-full p-4 overflow-auto text-sm absolute inset-0">
+                        <code className="whitespace-pre-wrap">{activeFileContent}</code>
+                      </pre>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                        {isLoading ? "Processing..." : "No file selected."}
+                    </div>
+                  )}
+                </div>
+                <div className="relative bg-white border-l border-gray-700 overflow-hidden hidden lg:block">
+                    {hasPreview && (
+                      <button
+                        onClick={handleOpenPreviewInNewTab}
+                        className="absolute top-2 right-2 p-1.5 bg-gray-100 text-gray-800 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors z-20"
+                        title="Open preview in new tab"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </button>
+                    )}
+                    <iframe
+                        srcDoc={previewContent}
+                        title="Preview"
+                        sandbox="allow-scripts allow-same-origin"
+                        className="w-full h-full border-0"
+                    />
+                </div>
+                {/* Mobile Preview Overlay/Tab content if we want to show just preview in a different way, but here it shares space with code. 
+                    For simplicity on mobile, let's stack them or just show code. 
+                    Let's stack them in the code tab for mobile.
+                */}
+                 <div className="relative bg-white border-t border-gray-700 overflow-hidden lg:hidden h-1/2">
+                    {hasPreview && (
+                      <button
+                        onClick={handleOpenPreviewInNewTab}
+                        className="absolute top-2 right-2 p-1.5 bg-gray-100 text-gray-800 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors z-20"
+                        title="Open preview in new tab"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </button>
+                    )}
+                    <iframe
+                        srcDoc={previewContent}
+                        title="Preview Mobile"
+                        sandbox="allow-scripts allow-same-origin"
+                        className="w-full h-full border-0"
+                    />
+                </div>
+            </div>
+          </div>
       </div>
     </div>
   );

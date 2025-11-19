@@ -1,60 +1,58 @@
-
 import React from 'react';
 import { type AppDefinition } from './types';
 
 export const APPS: AppDefinition[] = [
   {
-    name: 'Presentation',
+    name: 'PowerPoint',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-full w-full">
         <defs>
           <linearGradient id="ppt-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#8b5cf6" stopOpacity="1" />
-            <stop offset="100%" stopColor="#6366f1" stopOpacity="1" />
+            <stop offset="0%" stopColor="#ea580c" />
+            <stop offset="100%" stopColor="#c2410c" />
           </linearGradient>
         </defs>
-        <rect width="100" height="100" rx="22" fill="#f5f3ff" />
-        <g transform="translate(0, 5)">
-            <rect x="15" y="25" width="70" height="45" rx="5" fill="url(#ppt-grad)"/>
-            <circle cx="50" cy="47" r="12" fill="white" opacity="0.8"/>
-            <path d="M50 35 A 12 12 0 0 1 60.39 43" stroke="#a78bfa" strokeWidth="4" fill="none" />
+        <rect width="100" height="100" rx="22" fill="#fff7ed" />
+        <g transform="translate(20, 20)">
+             <rect width="60" height="60" rx="8" fill="url(#ppt-grad)"/>
+             <path d="M44 25 V55 M44 25 H55 C62 25 62 40 55 40 H44" stroke="white" strokeWidth="6" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+             <g transform="translate(45, 15)">
+                 <circle cx="15" cy="15" r="18" fill="none" stroke="white" strokeWidth="2" opacity="0.3"/>
+                 <path d="M15 0 L30 30 H0 Z" fill="white" opacity="0.2" transform="rotate(45 15 15)"/>
+             </g>
         </g>
       </svg>
     ),
   },
   {
-    name: 'Word Processor',
+    name: 'Word',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-full w-full">
-          <rect width="100" height="100" rx="22" fill="#eef2ff"/>
-          <g transform="translate(20, 15)">
-              <rect x="0" y="0" width="60" height="70" rx="5" fill="#4f46e5"/>
-              <rect x="5" y="5" width="50" height="60" rx="2" fill="white"/>
-              <rect x="15" y="15" width="30" height="4" rx="2" fill="#c7d2fe"/>
-              <rect x="15" y="25" width="40" height="4" rx="2" fill="#a5b4fc"/>
-              <rect x="15" y="35" width="40" height="4" rx="2" fill="#a5b4fc"/>
-              <rect x="15" y="45" width="40" height="4" rx="2" fill="#a5b4fc"/>
-              <rect x="15" y="55" width="25" height="4" rx="2" fill="#c7d2fe"/>
+          <rect width="100" height="100" rx="22" fill="#eff6ff"/>
+          <g transform="translate(15, 15)">
+              <rect x="5" y="5" width="60" height="60" rx="8" fill="#2563eb"/>
+              <path d="M20 25 L27 55 L35 35 L43 55 L50 25" stroke="white" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <rect x="45" y="15" width="25" height="30" rx="2" fill="#93c5fd" opacity="0.8"/>
+              <rect x="48" y="20" width="19" height="3" rx="1.5" fill="white"/>
+              <rect x="48" y="26" width="19" height="3" rx="1.5" fill="white"/>
+              <rect x="48" y="32" width="14" height="3" rx="1.5" fill="white"/>
           </g>
       </svg>
     )
   },
   {
-    name: 'Spreadsheet',
+    name: 'Excel',
     icon: (
        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-full w-full">
           <rect width="100" height="100" rx="22" fill="#f0fdf4"/>
-          <g transform="translate(20, 15)">
-              <rect x="0" y="0" width="60" height="70" rx="5" fill="#16a34a"/>
-              <rect x="5" y="5" width="50" height="60" rx="2" fill="white"/>
-              <rect x="10" y="10" width="18" height="10" fill="#dcfce7"/>
-              <rect x="32" y="10" width="18" height="10" fill="#dcfce7"/>
-              <rect x="10" y="25" width="18" height="10" fill="#bbf7d0"/>
-              <rect x="32" y="25" width="18" height="10" fill="#bbf7d0"/>
-              <rect x="10" y="40" width="18" height="10" fill="#bbf7d0"/>
-              <rect x="32" y="40" width="18" height="10" fill="#bbf7d0"/>
-              <rect x="10" y="55" width="18" height="10" fill="#dcfce7"/>
-              <rect x="32" y="55" width="18" height="10" fill="#dcfce7"/>
+          <g transform="translate(20, 20)">
+              <rect x="0" y="0" width="60" height="60" rx="8" fill="#16a34a"/>
+              <path d="M18 18 L42 42 M42 18 L18 42" stroke="white" strokeWidth="8" strokeLinecap="round"/>
+              <rect x="40" y="35" width="25" height="25" rx="4" fill="#86efac" opacity="0.9"/>
+              <rect x="45" y="40" width="6" height="6" fill="#15803d" opacity="0.6"/>
+              <rect x="54" y="40" width="6" height="6" fill="#15803d" opacity="0.6"/>
+              <rect x="45" y="49" width="6" height="6" fill="#15803d" opacity="0.6"/>
+              <rect x="54" y="49" width="6" height="6" fill="#15803d" opacity="0.6"/>
           </g>
       </svg>
     )
@@ -117,8 +115,8 @@ export const APPS: AppDefinition[] = [
     icon: (
        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" className="h-full w-full">
         <rect width="64" height="64" rx="14" fill="#f3f4f6" />
-        <path fill="#B0B5BA" d="M52,35.4c-0.1-1-0.2-2-0.4-3l4.1-3.2c0.4-0.3,0.5-0.8,0.2-1.2l-3.8-6.6c-0.2-0.4-0.7-0.6-1.2-0.4 l-4.8,1.9c-1-0.8-2.1-1.4-3.2-1.9l-0.7-5c-0.1-0.5-0.5-0.8-1-0.8h-7.7c-0.5,0-0.9,0.3-1,0.8l-0.7,5c-1.2,0.5-2.2,1.1-3.2,1.9 l-4.8-1.9c-0.5-0.2-1,0-1.2,0.4l-3.8,6.6c-0.2,0.4-0.1,0.9,0.2,1.2l4.1,3.2c-0.2,1-0.3,2-0.4,3c-0.1,1-0.2,2-0.2,3 c0,1,0.1,2,0.2,3c0.1,1,0.2,2,0.4,3l-4.1,3.2c-0.4,0.3-0.5,0.8-0.2,1.2l3.8,6.6c0.2,0.4,0.7,0.6,1.2,0.4l4.8-1.9 c1,0.8,2.1,1.4,3.2,1.9l0.7,5c0.1,0.5,0.5,0.8,1,0.8h7.7c0.5,0,0.9,0.3,1-0.8l0.7-5c1.2-0.5,2.2-1.1,3.2-1.9l4.8,1.9 c0.5,0.2,1,0,1.2-0.4l3.8-6.6c0.2-0.4,0.1-0.9-0.2-1.2l-4.1-3.2C51.8,39.4,51.9,38.4,52,37.4C52.1,36.4,52.1,35.4,52,35.4z"/>
-        <path fill="#D1D5DB" d="M47.7,35.1c0-0.6,0-1.3-0.1-1.9l3.5-2.7c0.3-0.2,0.4-0.6,0.2-0.9l-3.3-5.7c-0.2-0.3-0.6-0.5-0.9-0.3 l-4.1,1.6c-0.9-0.6-1.8-1.2-2.8-1.6l-0.6-4.3c-0.1-0.4-0.4-0.7-0.8-0.7h-6.6c-0.4,0-0.8,0.3-0.8,0.7l-0.6,4.3 c-1,0.4-1.9,1-2.8,1.6l-4.1-1.6c-0.4-0.2-0.8,0-0.9,0.3l-3.3,5.7c-0.2,0.3-0.1,0.7,0.2,0.9l3.5,2.7c-0.1,0.6-0.1,1.3-0.1,1.9 c0,0.6,0,1.3,0.1,1.9l-3.5,2.7c-0.3,0.2-0.4,0.6-0.2,0.9l3.3,5.7c0.2,0.3,0.6,0.5,0.9,0.3l4.1-1.6c0.9,0.6,1.8,1.2,2.8,1.6 l0.6,4.3c0.1,0.4,0.4,0.7,0.8,0.7h6.6c0.4,0,0.8-0.3,0.8-0.7l0.6-4.3c1-0.4,1.9-1,2.8-1.6l4.1,1.6c0.4,0.2,0.8,0,0.9-0.3 l3.3-5.7c0.2-0.3,0.1-0.7-0.2-0.9l-3.5-2.7C47.6,36.4,47.7,35.7,47.7,35.1z"/>
+        <path fill="#B0B5BA" d="M52,35.4c-0.1-1-0.2-2-0.4-3l4.1-3.2c0.4-0.3,0.5-0.8,0.2-1.2l-3.8-6.6c-0.2-0.4-0.7-0.6-1.2-0.4 l-4.8,1.9c-1-0.8-2.1-1.4-3.2-1.9l-0.7-5c-0.1-0.5-0.5-0.8-1-0.8h-7.7c-0.5,0-0.9,0.3-1,0.8l-0.7,5c-1.2,0.5-2.2,1.1-3.2,1.9 l-4.8-1.9c-0.5-0.2-1,0-1.2,0.4l3.8-6.6c0.2-0.4,0.1-0.9-0.2-1.2l-4.1-3.2C51.8,39.4,51.9,38.4,52,37.4C52.1,36.4,52.1,35.4,52,35.4z"/>
+        <path fill="#D1D5DB" d="M47.7,35.1c0-0.6,0-1.3-0.1-1.9l3.5-2.7c0.3-0.2,0.4-0.6,0.2-0.9l-3.3-5.7c-0.2-0.3-0.6-0.5-0.9-0.3 l-4.1,1.6c-0.9-0.6-1.8-1.2-2.8-1.6l-0.6-4.3c-0.1-0.4-0.4-0.7-0.8-0.7h-6.6c-0.4,0-0.8,0.3-0.8,0.7l-0.6,4.3 c-1,0.4-1.9,1-2.8,1.6l-4.1-1.6c-0.4-0.2-0.8,0-0.9,0.3 l-3.3-5.7c0.2-0.3,0.1-0.7-0.2-0.9l-3.5-2.7C47.6,36.4,47.7,35.7,47.7,35.1z"/>
         <circle fill="#F3F4F6" cx="32" cy="32.8" r="9"/>
         <circle fill="#B0B5BA" cx="32" cy="32.8" r="5"/>
       </svg>

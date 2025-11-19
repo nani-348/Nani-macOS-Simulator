@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import { generatePresentation, editSlide, type Slide } from '../../services/geminiService';
 import PptxGenJS from 'pptxgenjs';
@@ -27,7 +24,7 @@ const loadingMessages = [
 
 export const PptMaker: React.FC = () => {
   const [slides, setSlides] = useState<Slide[]>([
-    { title: 'Welcome to Presentations', content: ['Use the AI generator to create a new presentation.'], transition: 'none' }
+    { title: 'Welcome to PowerPoint', content: ['Use the AI generator to create a new presentation.'], transition: 'none' }
   ]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [prompt, setPrompt] = useState('');
@@ -37,6 +34,7 @@ export const PptMaker: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [generationTopic, setGenerationTopic] = useState('');
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [showMobileTools, setShowMobileTools] = useState(true); // State for mobile toggle
 
   useEffect(() => {
     let intervalId: number | undefined;
@@ -61,6 +59,7 @@ export const PptMaker: React.FC = () => {
   const handleGenerateSlides = async () => {
     if (!prompt) return;
     setIsLoading(true);
+    if (window.innerWidth < 768) setShowMobileTools(false); // Auto-hide tools on mobile start
     setSlides([]);
     setCurrentSlide(0);
     setGenerationTopic(prompt);
@@ -83,7 +82,7 @@ export const PptMaker: React.FC = () => {
   };
 
   const handleReviseSlide = async () => {
-    if (!editPrompt || currentSlide < 0 || slides[currentSlide].title === 'Welcome to Presentations') return;
+    if (!editPrompt || currentSlide < 0 || slides[currentSlide].title === 'Welcome to PowerPoint') return;
 
     setIsEditing(true);
     const slideToEdit = slides[currentSlide];
@@ -116,7 +115,7 @@ export const PptMaker: React.FC = () => {
   };
 
   const handleDownload = async () => {
-     if (slides.length === 0 || slides[0].title === 'Welcome to Presentations') return;
+     if (slides.length === 0 || slides[0].title === 'Welcome to PowerPoint') return;
      const pptx = new PptxGenJS();
     
      slides.forEach((slideData, index) => {
@@ -156,12 +155,29 @@ export const PptMaker: React.FC = () => {
   };
 
   const activeSlide = slides[currentSlide];
-  const isActionable = slides.length > 0 && slides[0].title !== 'Welcome to Presentations';
+  const isActionable = slides.length > 0 && slides[0].title !== 'Welcome to PowerPoint';
 
   return (
-    <div className="flex flex-col md:flex-row h-full bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-      {/* Left Sidebar */}
-      <aside className="w-full md:w-96 flex flex-col flex-shrink-0 bg-gray-100 dark:bg-gray-900/50 border-r border-gray-200 dark:border-gray-700">
+    <div className="flex flex-col md:flex-row h-full bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 relative">
+      
+      {/* Mobile Tool Toggle */}
+      <button 
+        onClick={() => setShowMobileTools(!showMobileTools)}
+        className="md:hidden absolute top-2 right-2 z-30 bg-gray-800 text-white p-2 rounded-full shadow-lg opacity-80 hover:opacity-100"
+      >
+        {showMobileTools ? (
+           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+             <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+           </svg>
+        ) : (
+           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+             <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+           </svg>
+        )}
+      </button>
+
+      {/* Left Sidebar (Tools) */}
+      <aside className={`${showMobileTools ? 'flex' : 'hidden'} md:flex w-full md:w-96 flex-col flex-shrink-0 bg-gray-100 dark:bg-gray-900/95 border-r border-gray-200 dark:border-gray-700 absolute md:static inset-0 z-20 md:z-auto`}>
         
         {/* Generation Controls */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
@@ -210,7 +226,7 @@ export const PptMaker: React.FC = () => {
           {slides.map((slide, index) => (
             <div
               key={index}
-              onClick={() => setCurrentSlide(index)}
+              onClick={() => { setCurrentSlide(index); if(window.innerWidth < 768) setShowMobileTools(false); }}
               className={`p-2 rounded cursor-pointer border-2 flex items-center space-x-3 ${currentSlide === index ? 'border-orange-500 bg-white dark:bg-gray-600' : 'border-transparent bg-gray-300 dark:bg-gray-600/50 hover:bg-gray-400 dark:hover:bg-gray-500/50'}`}
             >
               <span className="font-semibold text-sm">{index + 1}.</span>
@@ -297,11 +313,11 @@ export const PptMaker: React.FC = () => {
         ) : activeSlide ? (
           <div
               key={currentSlide}
-              className={`absolute inset-0 p-4 md:p-12 flex items-center justify-center ${getAnimationClass(activeSlide.transition)}`}
+              className={`absolute inset-0 p-4 md:p-12 flex items-center justify-center overflow-y-auto md:overflow-hidden ${getAnimationClass(activeSlide.transition)}`}
            >
               <div className="w-full h-full bg-white dark:bg-gray-900 shadow-2xl rounded-lg border-gray-200 dark:border-gray-700 border p-4 md:p-8 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
                   <div className={`w-full md:w-1/2 flex flex-col justify-center text-left ${currentSlide % 2 !== 0 ? 'md:order-2' : ''}`}>
-                      <h1 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6 text-gray-800 dark:text-gray-100">{activeSlide.title}</h1>
+                      <h1 className="text-xl md:text-4xl font-bold mb-4 md:mb-6 text-gray-800 dark:text-gray-100">{activeSlide.title}</h1>
                       <ul className="text-sm md:text-lg list-disc list-inside space-y-3 text-gray-600 dark:text-gray-300">
                           {activeSlide.content.map((point, i) => (
                               <li key={i}>{point}</li>

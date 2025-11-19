@@ -43,7 +43,7 @@ export const Spreadsheet: React.FC = () => {
           type="text"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe table data to generate (e.g., '5 employees with names and roles')"
+          placeholder="Describe table data (e.g., '5 employees')..."
           className="flex-grow p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 rounded-md focus:ring-2 focus:ring-green-500 focus:outline-none"
           disabled={isLoading}
         />
@@ -57,7 +57,7 @@ export const Spreadsheet: React.FC = () => {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-          ) : 'Generate with AI'}
+          ) : 'Generate'}
         </button>
       </div>
       <div className="flex-grow overflow-auto">
@@ -75,14 +75,14 @@ export const Spreadsheet: React.FC = () => {
           <tbody>
             {data.map((row, rowIndex) => (
               <tr key={rowIndex}>
-                <td className="p-2 border dark:border-gray-600 text-center bg-gray-200 dark:bg-gray-700 sticky left-0 z-10">{rowIndex + 1}</td>
+                <td className="p-2 border dark:border-gray-600 text-center bg-gray-200 dark:bg-gray-700 sticky left-0 z-10 font-mono text-xs text-gray-500">{rowIndex + 1}</td>
                 {headers.map((header) => (
                   <td key={`${rowIndex}-${header}`} className="border dark:border-gray-600 p-0">
                     <input
                       type="text"
                       value={row[header] || ''}
                       onChange={(e) => handleCellChange(rowIndex, header, e.target.value)}
-                      className="w-full h-full p-2 outline-none bg-transparent focus:bg-green-100 dark:focus:bg-green-900/50 min-w-[120px]"
+                      className="w-full h-12 lg:h-full p-2 outline-none bg-transparent focus:bg-green-100 dark:focus:bg-green-900/50 min-w-[120px] text-base lg:text-sm"
                     />
                   </td>
                 ))}

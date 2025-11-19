@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Dock } from './components/Dock';
 import { MenuBar } from './components/MenuBar';
@@ -16,7 +13,7 @@ import { FileManager } from './components/apps/FileManager';
 import { Shortcuts } from './components/apps/Shortcuts';
 import { Nani } from './components/apps/Nani';
 import { ExposeView } from './components/ExposeView';
-import { type WindowState, type AppName, type Shortcut, type DesktopItem } from './types';
+import { type WindowState, type AppName, type Shortcut, type DesktopItem, type SnapTarget } from './types';
 import { APPS } from './constants';
 import * as shortcutsService from './services/shortcutsService';
 import { playSound } from './services/audioService';
@@ -61,6 +58,7 @@ const App: React.FC = () => {
   const [isExposeActive, setIsExposeActive] = useState(false);
   const [desktopItems, setDesktopItems] = useState<DesktopItem[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [snapPreview, setSnapPreview] = useState<SnapTarget | null>(null);
 
   const isMobile = useIsMobile();
   const [activeMobileApp, setActiveMobileApp] = useState<AppName | null>(null);
@@ -85,7 +83,7 @@ const App: React.FC = () => {
       if (!app) return currentWindows;
 
       let size = { width: 800, height: 600 };
-      if (appName === 'Presentation' || appName === 'Word Processor' || appName === 'Spreadsheet' || appName === 'Image Studio' || appName === 'Browser' || appName === 'Google') {
+      if (appName === 'PowerPoint' || appName === 'Word' || appName === 'Excel' || appName === 'Image Studio' || appName === 'Browser' || appName === 'Google') {
         size = { width: 900, height: 700 };
       } else if (appName === 'Settings' || appName === 'Shortcuts') {
         size = { width: 600, height: 450 };
@@ -269,11 +267,11 @@ const App: React.FC = () => {
 
   const renderAppContent = (appName: AppName) => {
     switch(appName) {
-      case 'Presentation':
+      case 'PowerPoint':
         return <PptMaker />;
-      case 'Word Processor':
+      case 'Word':
         return <WordProcessor />;
-      case 'Spreadsheet':
+      case 'Excel':
         return <Spreadsheet />;
       case 'Nani':
         return <Nani />;
@@ -303,23 +301,24 @@ const App: React.FC = () => {
   if (isMobile) {
     return (
         <div 
-            className={`w-screen h-screen bg-cover bg-center font-sans`}
+            className={`w-screen h-screen bg-cover bg-center font-sans overflow-hidden relative`}
             style={{ backgroundImage: `url(${wallpaper})`}}
         >
             <MenuBar activeAppName={activeMobileApp || 'Finder'} />
             <main className="w-full h-full">
                 {activeMobileApp && (
-                    <div className="absolute inset-0 top-7 z-20 flex flex-col bg-gray-200 dark:bg-gray-800 animate-fade-in">
-                        <header className="h-10 bg-gray-100 dark:bg-gray-700 flex items-center px-3 flex-shrink-0 border-b border-gray-300 dark:border-gray-600">
-                            <button onClick={closeActiveMobileApp} className="flex items-center space-x-1 text-blue-500 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md p-1 -ml-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                                <span>Home</span>
-                            </button>
-                            <div className="flex-1 text-center text-sm font-semibold truncate pr-20">{activeMobileApp}</div>
+                    <div className="absolute inset-0 top-7 bottom-0 z-50 flex flex-col bg-gray-100 dark:bg-gray-900 animate-fade-in pb-20 md:pb-0">
+                        <header className="h-12 bg-gray-200 dark:bg-gray-800 flex items-center px-4 flex-shrink-0 border-b border-gray-300 dark:border-gray-700 shadow-md sticky top-0 z-30 justify-between">
+                             <div className="flex items-center gap-3">
+                                <button onClick={closeActiveMobileApp} className="flex items-center justify-center bg-blue-500 text-white rounded-full p-1.5 shadow-sm active:bg-blue-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                      <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                                <span className="font-bold text-lg truncate text-gray-800 dark:text-white">{activeMobileApp}</span>
+                            </div>
                         </header>
-                        <div className="flex-1 overflow-auto">
+                        <div className="flex-1 overflow-hidden relative w-full">
                             {renderAppContent(activeMobileApp)}
                         </div>
                     </div>
@@ -332,7 +331,7 @@ const App: React.FC = () => {
 
   return (
     <div 
-      className={`w-screen h-screen bg-cover bg-center font-sans transition-all duration-500 ${isDraggingOver ? 'outline outline-4 outline-offset-[-4px] outline-blue-500/50' : ''}`}
+      className={`w-screen h-screen bg-cover bg-center font-sans transition-all duration-500 ${isDraggingOver ? 'outline outline-4 outline-offset-[-4px] outline-blue-500/50' : ''} overflow-hidden`}
       style={{ backgroundImage: `url(${wallpaper})`}}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
@@ -363,12 +362,25 @@ const App: React.FC = () => {
               onToggleFullScreen={() => toggleFullScreen(windowState.id)}
               onFocus={() => focusWindow(windowState.id)}
               onUpdate={updates => updateWindowState(windowState.id, updates)}
+              onSnapPreview={setSnapPreview}
               style={{ display: windowState.minimized ? 'none' : 'flex' }}
             >
               {renderAppContent(windowState.app.name)}
             </Window>
         )}
       </main>
+      {snapPreview && !isExposeActive && (
+        <div
+          className="fixed bg-white/20 backdrop-blur-sm border-2 border-white/50 rounded-lg transition-all duration-100 ease-in-out"
+          style={{
+            left: snapPreview.x,
+            top: snapPreview.y,
+            width: snapPreview.width,
+            height: snapPreview.height,
+            zIndex: 9998
+          }}
+        />
+      )}
       {isExposeActive && (
         <ExposeView
             windows={windows.filter(w => !w.minimized)}

@@ -7,21 +7,29 @@
     <title>React macOS Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      /* For custom scrollbars to match macOS aesthetic */
+      /* For modern, macOS-style scrollbars */
+      /* Firefox */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(155, 155, 155, 0.7) transparent;
+      }
+      
+      /* Webkit (Chrome, Safari, Edge) */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.1);
-        border-radius: 10px;
+        background: transparent; /* Makes track invisible */
       }
       ::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.3);
+        background-color: rgba(0, 0, 0, 0.3);
         border-radius: 10px;
+        border: 2px solid transparent;
+        background-clip: content-box;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 0, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.5);
       }
 
       /* Slide Transitions */

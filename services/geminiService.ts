@@ -1,6 +1,3 @@
-
-
-
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 
 // Fix: Per coding guidelines, API_KEY must be used directly from process.env.
@@ -418,9 +415,11 @@ export const generateSpeech = async (text: string): Promise<string> => {
         const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: `Say in a friendly and expressive voice: ${text}` }] }],
+            // Correctly formatted as array of contents, which corresponds to the API expectations for TTS
+            contents: [{ parts: [{ text: `Say this text in a friendly, natural voice: ${text}` }] }],
             config: {
-                responseModalities: [Modality.AUDIO],
+                // Use string literal to ensure compatibility and avoid potential enum issues at runtime
+                responseModalities: ['AUDIO'], 
                 speechConfig: {
                     voiceConfig: {
                         prebuiltVoiceConfig: { voiceName: 'Zephyr' },
@@ -430,13 +429,22 @@ export const generateSpeech = async (text: string): Promise<string> => {
         });
 
         const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        
+        // Handle cases where the model might fallback to text (e.g. safety filter or confusion)
+        const textFallback = response.candidates?.[0]?.content?.parts?.[0]?.text;
+        if(textFallback && !base64Audio) {
+             console.warn("GenerateSpeech returned text instead of audio:", textFallback);
+             throw new Error("Model returned text instead of audio. Please try a different phrase.");
+        }
+
         if (!base64Audio) {
+            console.warn("GenerateSpeech response missing audio data. Response:", JSON.stringify(response, null, 2));
             throw new Error("No audio data received from API.");
         }
         return base64Audio;
     } catch (error) {
         console.error("Error generating speech:", error);
-        throw new Error("Failed to generate speech.");
+        throw error; // Propagate the specific error message
     }
 };
 
@@ -530,6 +538,23 @@ ${JSON.stringify(resumeData, null, 2)}`;
 
     } catch (error) {
         console.error("Error generating portfolio from resume:", error);
+        return [{ fileName: 'error.txt', code: `/* Error: Could not generate portfolio.\n${error} */` }];
+    }
+};
+
+export const generatePortfolioFromText = async (description: string): Promise<CodeFile[]> => {
+    try {
+        const portfolioPrompt = `Based on the following description, create a professional, single-page portfolio website using vanilla HTML, CSS, and JavaScript. The website should be visually appealing, modern, and responsive, with a clean design. It should have a hero section with the person's name and a short summary. It must include sections for Skills, Work Experience, Projects, and Education, plus a footer with contact information and links, if provided in the description. Add some smooth scroll animations with JavaScript.
+
+User's Description:
+"${description}"`;
+
+        // Re-use the existing code generation function
+        const portfolioFiles = await generateOrModifyCode(portfolioPrompt);
+        return portfolioFiles;
+
+    } catch (error) {
+        console.error("Error generating portfolio from text:", error);
         return [{ fileName: 'error.txt', code: `/* Error: Could not generate portfolio.\n${error} */` }];
     }
 };

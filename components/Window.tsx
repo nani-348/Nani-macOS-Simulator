@@ -1,5 +1,5 @@
 import React, { useRef, useCallback } from 'react';
-import { type WindowState } from '../types';
+import { type WindowState, type SnapTarget } from '../types';
 
 interface WindowProps {
   state: WindowState;
@@ -9,6 +9,7 @@ interface WindowProps {
   onToggleFullScreen: () => void;
   onFocus: () => void;
   onUpdate: (updates: Partial<WindowState>) => void;
+  onSnapPreview: (target: SnapTarget | null) => void;
   children: React.ReactNode;
   style?: React.CSSProperties;
 }
@@ -24,11 +25,13 @@ export const Window: React.FC<WindowProps> = ({
   onToggleFullScreen,
   onFocus,
   onUpdate,
+  onSnapPreview,
   children,
   style
 }) => {
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
   const initialPos = useRef<{ x: number; y: number } | null>(null);
+  const snapTargetRef = useRef<SnapTarget | null>(null);
 
   const handleDragStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (state.isFullScreen) return;
@@ -41,10 +44,61 @@ export const Window: React.FC<WindowProps> = ({
       if (!dragStartPos.current || !initialPos.current) return;
       const dx = moveEvent.clientX - dragStartPos.current.x;
       const dy = moveEvent.clientY - dragStartPos.current.y;
-      onUpdate({ position: { x: initialPos.current.x + dx, y: initialPos.current.y + dy } });
+      
+      const { clientX, clientY } = moveEvent;
+      const { innerWidth, innerHeight } = window;
+      const menuBarHeight = 28;
+      const SNAP_THRESHOLD = 5;
+
+      let currentSnapTarget: SnapTarget | null = null;
+      
+      // Top snap (fullscreen)
+      if (clientY <= SNAP_THRESHOLD) {
+          currentSnapTarget = {
+              x: 0, y: menuBarHeight, width: innerWidth, height: innerHeight - menuBarHeight, isFullScreen: true,
+          };
+      } 
+      // Left snap
+      else if (clientX <= SNAP_THRESHOLD) {
+          currentSnapTarget = {
+              x: 0, y: menuBarHeight, width: Math.round(innerWidth / 2), height: innerHeight - menuBarHeight,
+          };
+      } 
+      // Right snap
+      else if (clientX >= innerWidth - SNAP_THRESHOLD) {
+          currentSnapTarget = {
+              x: Math.round(innerWidth / 2), y: menuBarHeight, width: Math.round(innerWidth / 2), height: innerHeight - menuBarHeight,
+          };
+      }
+
+      // Only update preview if it changes
+      if (JSON.stringify(snapTargetRef.current) !== JSON.stringify(currentSnapTarget)) {
+        onSnapPreview(currentSnapTarget);
+      }
+      snapTargetRef.current = currentSnapTarget;
+
+      // If not snapping, perform normal drag
+      if (!currentSnapTarget) {
+          onUpdate({ position: { x: initialPos.current.x + dx, y: initialPos.current.y + dy } });
+      }
     };
 
     const handleMouseUp = () => {
+      if (snapTargetRef.current) {
+          if (snapTargetRef.current.isFullScreen) {
+              onUpdate({ isFullScreen: true });
+          } else {
+              const { x, y, width, height } = snapTargetRef.current;
+              onUpdate({
+                  position: { x, y },
+                  size: { width, height },
+                  isFullScreen: false,
+              });
+          }
+      }
+
+      onSnapPreview(null);
+      snapTargetRef.current = null;
       dragStartPos.current = null;
       initialPos.current = null;
       document.removeEventListener('mousemove', handleMouseMove);
@@ -53,7 +107,8 @@ export const Window: React.FC<WindowProps> = ({
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [onFocus, onUpdate, state.position, state.isFullScreen]);
+  }, [onFocus, onUpdate, state.position, state.size, state.isFullScreen, onSnapPreview, onToggleFullScreen]);
+
 
   const handleResizeMouseDown = useCallback((e: React.MouseEvent, direction: string) => {
     if (state.isFullScreen) return;
