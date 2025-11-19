@@ -305,9 +305,9 @@ const App: React.FC = () => {
             style={{ backgroundImage: `url(${wallpaper})`}}
         >
             <MenuBar activeAppName={activeMobileApp || 'Finder'} />
-            <main className="w-full h-full">
-                {activeMobileApp && (
-                    <div className="absolute inset-0 top-7 bottom-0 z-50 flex flex-col bg-gray-100 dark:bg-gray-900 animate-fade-in pb-20 md:pb-0">
+            <main className="w-full h-full overflow-hidden relative pt-7">
+                {activeMobileApp ? (
+                    <div className="absolute inset-0 z-50 flex flex-col bg-gray-100 dark:bg-gray-900 animate-fade-in">
                         <header className="h-12 bg-gray-200 dark:bg-gray-800 flex items-center px-4 flex-shrink-0 border-b border-gray-300 dark:border-gray-700 shadow-md sticky top-0 z-30 justify-between">
                              <div className="flex items-center gap-3">
                                 <button onClick={closeActiveMobileApp} className="flex items-center justify-center bg-blue-500 text-white rounded-full p-1.5 shadow-sm active:bg-blue-600">
@@ -322,9 +322,29 @@ const App: React.FC = () => {
                             {renderAppContent(activeMobileApp)}
                         </div>
                     </div>
+                ) : (
+                    <div className="w-full h-full overflow-y-auto p-4 pb-20 animate-fade-in">
+                         <div className="grid grid-cols-4 gap-4 justify-items-center content-start pt-4">
+                            {APPS.map((app) => (
+                                <button
+                                    key={app.name}
+                                    onClick={() => openApp(app.name)}
+                                    className="flex flex-col items-center w-[72px] group mb-2"
+                                >
+                                    <div className="w-[60px] h-[60px] rounded-[14px] shadow-xl transition-transform active:scale-95 bg-white/5 backdrop-blur-sm">
+                                        <div className="w-full h-full p-0.5">
+                                            {app.icon}
+                                        </div>
+                                    </div>
+                                    <span className="mt-1.5 text-[11px] font-medium text-white text-center leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] line-clamp-2 w-full px-0.5 break-words">
+                                        {app.name}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 )}
             </main>
-            <Dock openApp={openApp} runningApps={activeMobileApp ? [activeMobileApp] : []} />
         </div>
     );
   }
